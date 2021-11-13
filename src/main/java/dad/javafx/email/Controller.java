@@ -96,6 +96,8 @@ public class Controller implements Initializable {
 		email.setMsg(mensaje.getValue());
 		email.addTo(destinatario.getValue());
 		
+		email.send();
+		
 		App.info(
 				"Mensaje enviado",
 				"Mensaje enviado con éxito a '" + destinatario.getValue() + "'.", 
