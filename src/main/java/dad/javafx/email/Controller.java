@@ -12,6 +12,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -25,9 +26,8 @@ import javafx.scene.layout.GridPane;
 
 
 public class Controller implements Initializable {
-	
-//	EmailModel model = new EmailModel();
-	
+
+
 	private Email email = new SimpleEmail();
 	private StringProperty server = new SimpleStringProperty();
 	private StringProperty puerto = new SimpleStringProperty();
@@ -37,80 +37,79 @@ public class Controller implements Initializable {
 	private StringProperty mensaje = new SimpleStringProperty();
 	private StringProperty password = new SimpleStringProperty();
 	private BooleanProperty ssl = new SimpleBooleanProperty();
-	
+
 	@FXML
 	private GridPane view;
-	
+
 	@FXML
 	private TextField servidorText;
-	
+
 	@FXML
 	private TextField puertoText;
-	
+
 	@FXML
 	private TextField remitenteText;
-	
+
 	@FXML
 	private PasswordField remitentePassword;
-	
+
 	@FXML
 	private CheckBox sslCheckBox;
-	
+
 	@FXML
 	private TextArea mensajeText;
-	
+
 	@FXML
 	private TextField destinatarioText;
-	
+
 	@FXML
 	private TextField asuntoText;
-	
+
 	@FXML
 	private Button enviarButton;
-	
+
 	@FXML
 	private Button vaciarButton;
-	
+
 	@FXML
 	private Button cerrarButton;
-	
+
 	@FXML
 	void onEnviarButtonAction (ActionEvent e) {
-		try {
-//		model.getEmail().setHostName(servidorText.getText());
-//		model.getEmail().setSmtpPort(Integer.parseInt(puertoText.getText()));
-//		model.getEmail().setAuthentication(remitenteText.getText(), remitentePassword.getText());
-//		model.getEmail().setSSLOnConnect(sslCheckBox.isSelected());
-//		model.getEmail().setFrom(remitenteText.getText());
-//		model.getEmail().setSubject(asuntoText.getText());
-//		model.getEmail().setMsg(mensajeText.getText());
-//		model.getEmail().addTo(destinatarioText.getText());
-//		
-//		model.getEmail().send();
-		email.setHostName(server.getValue());
-		email.setSmtpPort(Integer.parseInt(puerto.getValue()));
-		email.setAuthentication(remitente.getValue(), password.getValue());
-		email.setSSLOnConnect(ssl.getValue());
-		email.setFrom(remitente.getValue());
-		email.setSubject(asunto.getValue());
-		email.setMsg(mensaje.getValue());
-		email.addTo(destinatario.getValue());
-		
-		email.send();
-		
-		App.info(
-				"Mensaje enviado",
-				"Mensaje enviado con éxito a '" + destinatario.getValue() + "'.", 
-				""
-			);
-			
-		}catch(Exception ex) {
+		Task<Void> tarea = new Task<Void>() {
+
+			protected Void call() throws Exception {
+
+				email.setHostName(server.getValue());
+				email.setSmtpPort(Integer.parseInt(puerto.getValue()));
+				email.setAuthentication(remitente.getValue(), password.getValue());
+				email.setSSLOnConnect(ssl.getValue());
+				email.setFrom(remitente.getValue());
+				email.setSubject(asunto.getValue());
+				email.setMsg(mensaje.getValue());
+				email.addTo(destinatario.getValue());
+				email.send();
+				return null;
+			}
+		};
+		tarea.setOnSucceeded(event ->{
+			App.info(
+					"Mensaje enviado",
+					"Mensaje enviado con éxito a '" + destinatario.getValue() + "'.", 
+					""
+					);
+
+		});
+		tarea.setOnFailed(event ->{
 			App.error(
-					"No se puedo enviar el email.", 
-					ex.toString()
-				);}
+					"No se puedo enviar el email.", "" + event
+					);
+			System.out.println(event);
+		});
+		
+		new Thread(tarea).start();
 	}
-	
+
 	@FXML
 	void onVaciarButtonAction (ActionEvent e) {
 		servidorText.clear();
@@ -121,15 +120,15 @@ public class Controller implements Initializable {
 		mensajeText.clear();
 		destinatarioText.clear();
 		asuntoText.clear();
-		
+
 	}
-	
+
 	@FXML
 	void onCerrarButtonAction (ActionEvent e) {
 		Platform.exit();
 	}
-	
-	
+
+
 	public Controller() throws IOException {
 		FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/View.fxml"));
 		loader.setController(this);
@@ -146,7 +145,7 @@ public class Controller implements Initializable {
 		remitentePassword.textProperty().bindBidirectional(password);
 		sslCheckBox.selectedProperty().bindBidirectional(ssl);
 	}
-		
+
 	public GridPane getView() {
 		return view;
 	}
